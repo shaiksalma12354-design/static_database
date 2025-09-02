@@ -1,0 +1,43 @@
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# Keyword-to-URL mapping (you can expand this)
+health_links = {
+    "diabetes": "https://www.mayoclinic.org/diseases-conditions/diabetes/symptoms-causes",
+    "hypertension": "https://www.who.int/news-room/fact-sheets/detail/hypertension",
+    "covid": "https://www.cdc.gov/coronavirus/2019-ncov/index.html",
+    "headache": "https://www.webmd.com/migraines-headaches/ss/slideshow-headache-overview"
+}
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # Get request from Dialogflow
+    req = request.get_json(force=True)
+
+    # Extract user query
+    user_query = req.get("queryResult", {}).get("queryText", "").lower()
+
+    # Default reply
+    reply_text = "I couldn’t find a direct link. Please provide more details."
+
+    # Match keywords
+    for keyword, url in health_links.items():
+        if keyword in user_query:
+            reply_text = f"I found helpful info here: {url}"
+            break
+
+    # Response in Dialogflow format
+    return jsonify({
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [reply_text]
+                }
+            }
+        ]
+    })
+
+if __name__ == '__main__':
+    # Run the server locally
+    app.run(host="0.0.0.0", port=5000)
